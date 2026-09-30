@@ -1,6 +1,4 @@
 "use strict";
-
-
 const defaultEvents = [
     {
         id: "event-1",
@@ -29,7 +27,7 @@ const defaultEvents = [
         host: "Kabir Mehta",
         location: "Workshop Studio"
     },
-    {
+     {
         id: "event-4",
         name: "Community Book Club",
         category: "community",
@@ -58,6 +56,8 @@ const defaultEvents = [
     }
 ];
 
+
+
 const eventList = document.getElementById("eventList");
 const emptyState = document.getElementById("emptyState");
 const loadingState = document.getElementById("loadingState");
@@ -73,10 +73,94 @@ const formStatus = document.getElementById("formStatus");
 const connectionStatus = document.getElementById("connectionStatus");
 
 
+
 let events = [];
 let currentCategory = "all";
 let currentSearch = "";
 
+
+
+function sanitizeText(value) {
+    const temp = document.createElement("div");
+
+    temp.textContent = String(value ?? "");
+
+    return temp.textContent
+        .replace(/[<>]/g, "")
+        .trim();
+}
+
+
+
+function loadEvents() {
+    try {
+        const savedEvents = localStorage.getItem("bookstore-events");
+
+        if (!savedEvents) {
+            events = [...defaultEvents];
+            saveEvents();
+            return;
+        }
+
+        const parsedEvents = JSON.parse(savedEvents);
+
+        if (Array.isArray(parsedEvents)) {
+            events = parsedEvents;
+        } else {
+            events = [...defaultEvents];
+        }
+
+    } catch (error) {
+        console.error("Could not load events:", error);
+
+        events = [...defaultEvents];
+    }
+}
+
+
+function saveEvents() {
+    try {
+        localStorage.setItem(
+            "bookstore-events",
+            JSON.stringify(events)
+        );
+    } catch (error) {
+        console.error("Could not save events:", error);
+    }
+}
+
+
+
+function trackInteraction(action) {
+    console.log(
+        `[Analytics] User interacted with Independent Bookstore Events Page - ${action}`
+    );
+}
+
+function updateConnectionStatus() {
+    if (!connectionStatus) {
+        return;
+    }
+
+    const text = connectionStatus.querySelector("span:last-child");
+
+    if (navigator.onLine) {
+        connectionStatus.classList.remove("offline");
+
+        if (text) {
+            text.textContent = "Online";
+        }
+    } else {
+        connectionStatus.classList.add("offline");
+
+        if (text) {
+            text.textContent = "Offline";
+        }
+    }
+}
+
+window.addEventListener("online", updateConnectionStatus);
+window.addEventListener("offline", updateConnectionStatus);
 
 function showLoading() {
     loadingState.hidden = false;
@@ -125,7 +209,6 @@ function formatDate(dateString) {
 }
 
 
-
 function formatTime(timeString) {
     if (!timeString) {
         return "Time unavailable";
@@ -150,6 +233,14 @@ function formatTime(timeString) {
 
 
 
+function escapeHTML(value) {
+    const div = document.createElement("div");
+
+    div.textContent = value;
+
+    return div.innerHTML;
+}
+
 
 function renderEvents(list) {
     eventList.innerHTML = "";
@@ -173,6 +264,7 @@ function renderEvents(list) {
 
     eventList.appendChild(fragment);
 }
+
 
 
 function createEventCard(event) {
@@ -264,12 +356,13 @@ function getFilteredEvents() {
 
         return matchesCategory && matchesSearch;
     });
-
 }
+
+
+
 function applyFilters() {
     showLoading();
 
-   
     setTimeout(() => {
         const filteredEvents = getFilteredEvents();
 
@@ -281,7 +374,6 @@ function applyFilters() {
 }
 
 
-
 searchInput.addEventListener("input", (event) => {
 
     currentSearch = sanitizeText(event.target.value);
@@ -289,7 +381,6 @@ searchInput.addEventListener("input", (event) => {
     applyFilters();
 
 });
-
 
 
 filterButtons.forEach((button) => {
@@ -370,7 +461,7 @@ const fields = {
 
     eventDate: {
         input: document.getElementById("eventDate"),
-             error: document.getElementById("eventDateError"),
+        error: document.getElementById("eventDateError"),
         label: "Date"
     },
 
@@ -380,11 +471,11 @@ const fields = {
         label: "Time"
     },
 
-        eventHost: {
-            input: document.getElementById("eventHost"),
-            error: document.getElementById("eventHostError"),
-            label: "Host / Author"
-        },
+    eventHost: {
+        input: document.getElementById("eventHost"),
+        error: document.getElementById("eventHostError"),
+        label: "Host / Author"
+    },
 
     eventLocation: {
         input: document.getElementById("eventLocation"),
@@ -392,8 +483,6 @@ const fields = {
         label: "Location"
     }
 };
-
-
 
 function clearFieldError(field) {
 
@@ -405,8 +494,6 @@ function clearFieldError(field) {
     field.error.textContent = "";
 }
 
-
-
 function showFieldError(field, message) {
 
     field.input.setAttribute(
@@ -416,7 +503,6 @@ function showFieldError(field, message) {
 
     field.error.textContent = message;
 }
-
 
 function validateForm() {
 
@@ -452,7 +538,7 @@ function validateForm() {
 
         showFieldError(
             fields.eventName,
-            "Please enter an sevent name."
+            "Please enter an event name."
         );
 
         isValid = false;
@@ -461,13 +547,14 @@ function validateForm() {
 
         showFieldError(
             fields.eventName,
-            "Event name must contain at least some characters."
+            "Event name must contain at least 3 characters."
         );
 
         isValid = false;
     }
 
 
+  
 
     if (!category) {
 
@@ -480,7 +567,7 @@ function validateForm() {
     }
 
 
- 
+
 
     if (!date) {
 
@@ -509,7 +596,6 @@ function validateForm() {
 
 
 
-
     if (!time) {
 
         showFieldError(
@@ -519,7 +605,6 @@ function validateForm() {
 
         isValid = false;
     }
-
 
 
 
@@ -544,6 +629,7 @@ function validateForm() {
 
 
     
+
     if (!location) {
 
         showFieldError(
@@ -578,7 +664,6 @@ function validateForm() {
 }
 
 
-
 eventForm.addEventListener("submit", async (event) => {
 
     event.preventDefault();
@@ -591,13 +676,12 @@ eventForm.addEventListener("submit", async (event) => {
     if (!validation.isValid) {
 
         formStatus.textContent =
-            "Please correct the highlighted wornf fields.";
+            "Please correct the highlighted fields.";
 
         formStatus.setAttribute(
             "role",
             "alert"
         );
-
 
         trackInteraction("Invalid form submission");
 
@@ -605,7 +689,7 @@ eventForm.addEventListener("submit", async (event) => {
     }
 
 
-
+  
 
     submitButton.disabled = true;
     submitButton.setAttribute(
@@ -619,8 +703,6 @@ eventForm.addEventListener("submit", async (event) => {
     formStatus.textContent =
         "Saving event...";
 
-
-   
 
     await new Promise((resolve) => {
         setTimeout(resolve, 800);
@@ -642,9 +724,6 @@ eventForm.addEventListener("submit", async (event) => {
 
     saveEvents();
 
-
-
-
     eventForm.reset();
 
     Object.values(fields).forEach(clearFieldError);
@@ -655,6 +734,7 @@ eventForm.addEventListener("submit", async (event) => {
         "Event added successfully.";
 
 
+  
 
     submitButton.disabled = false;
 
@@ -665,7 +745,6 @@ eventForm.addEventListener("submit", async (event) => {
 
     submitButton.textContent =
         "Add Event";
-
 
 
 
@@ -696,7 +775,6 @@ eventForm.addEventListener("submit", async (event) => {
 });
 
 
-
 Object.values(fields).forEach((field) => {
 
     field.input.addEventListener("input", () => {
@@ -719,6 +797,7 @@ Object.values(fields).forEach((field) => {
 });
 
 
+
 function initializeApp() {
 
     updateConnectionStatus();
@@ -727,7 +806,6 @@ function initializeApp() {
 
     showLoading();
 
-   
     setTimeout(() => {
 
         hideLoading();
@@ -739,3 +817,6 @@ function initializeApp() {
     }, 500);
 }
 
+
+
+initializeApp();

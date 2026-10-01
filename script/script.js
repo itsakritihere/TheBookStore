@@ -102,29 +102,34 @@ function showToast(message, type = "error") {
     }, 3000);
 }
 
-function loadEvents() {
+function readEvents() {
     try {
         const savedEvents = localStorage.getItem("bookstore-events");
 
         if (!savedEvents) {
             events = [...defaultEvents];
             saveEvents();
-            return;
+            return events;
         }
 
         const parsedEvents = JSON.parse(savedEvents);
 
-        if (Array.isArray(parsedEvents)) {
-            events = parsedEvents;
-        } else {
-            events = [...defaultEvents];
-        }
+        events = Array.isArray(parsedEvents)
+            ? parsedEvents
+            : [...defaultEvents];
 
     } catch (error) {
         console.error("Could not load events:", error);
 
         events = [...defaultEvents];
     }
+
+    return events;
+}
+
+
+async function loadEvents() {
+    return readEvents();
 }
 
 
@@ -172,6 +177,11 @@ function updateConnectionStatus() {
 window.addEventListener("online", updateConnectionStatus);
 window.addEventListener("offline", updateConnectionStatus);
 
+let loadingTimer = null;
+
+// Spinner appears only if loading takes longer than this (ms)
+const LOADING_DELAY = 400;
+
 function showLoading() {
     loadingState.hidden = false;
     eventList.hidden = true;
@@ -179,8 +189,14 @@ function showLoading() {
 }
 
 function hideLoading() {
+    clearTimeout(loadingTimer);
+    loadingTimer = null;
     loadingState.hidden = true;
-    
+}
+
+function showLoadingIfSlow() {
+    clearTimeout(loadingTimer);
+    loadingTimer = setTimeout(showLoading, LOADING_DELAY);
 }
 
 
@@ -188,6 +204,7 @@ function hideLoading() {
 function getCategoryLabel(category) {
     const categories = {
         "author-talk": "Author Talk",
+        "book-launch": "Book Launch",
         "reading": "Reading",
         "workshop": "Workshop",
         "community": "Community"
@@ -371,16 +388,7 @@ function getFilteredEvents() {
 
 
 function applyFilters() {
-    showLoading();
-
-    setTimeout(() => {
-        const filteredEvents = getFilteredEvents();
-
-        hideLoading();
-
-        renderEvents(filteredEvents);
-
-    }, 250);
+    renderEvents(getFilteredEvents());
 }
 
 
@@ -816,21 +824,23 @@ Object.values(fields).forEach((field) => {
 
 
 
-function initializeApp() {
+async function initializeApp() {
 
     updateConnectionStatus();
 
-    loadEvents();
+    
+    showLoadingIfSlow();
 
-    showLoading();
+    try {
+        await loadEvents();
+    } catch (error) {
+        console.error("Could not load events:", error);
+        events = [...defaultEvents];
+    }
 
-    setTimeout(() => {
-         const filteredEvents = getFilteredEvents();
-        hideLoading();
+    hideLoading();
 
-        renderEvents(filteredEvents);
-
-    }, 500);
+    renderEvents(getFilteredEvents());
 }
 
 

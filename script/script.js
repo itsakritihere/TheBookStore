@@ -57,7 +57,7 @@ const defaultEvents = [
 ];
 
 
-
+const toast = document.getElementById("toast");
 const eventList = document.getElementById("eventList");
 const emptyState = document.getElementById("emptyState");
 const loadingState = document.getElementById("loadingState");
@@ -90,7 +90,17 @@ function sanitizeText(value) {
         .trim();
 }
 
+function showToast(message, type = "error") {
+    toast.textContent = message;
 
+    toast.className = "toast";
+    toast.classList.add(type);
+    toast.classList.add("show");
+
+    setTimeout(() => {
+        toast.classList.remove("show");
+    }, 3000);
+}
 
 function loadEvents() {
     try {
@@ -682,6 +692,10 @@ eventForm.addEventListener("submit", async (event) => {
             "role",
             "alert"
         );
+        showToast(
+        "Please fill in all required fields.",
+        "error"
+    );
 
         trackInteraction("Invalid form submission");
 
@@ -699,6 +713,10 @@ eventForm.addEventListener("submit", async (event) => {
 
     submitButton.textContent =
         "Adding Event...";
+        showToast(
+    "Event added successfully!",
+    "success"
+);
 
     formStatus.textContent =
         "Saving event...";

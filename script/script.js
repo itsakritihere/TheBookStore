@@ -12,7 +12,7 @@ const defaultEvents = [
     {
         id: "event-2",
         name: "Sunday Poetry Reading",
-        category: "reading",
+        category: "book-launch",
         date: "2026-10-11",
         time: "17:00",
         host: "Rhea Kapoor",
@@ -170,7 +170,7 @@ function showLoading() {
 
 function hideLoading() {
     loadingState.hidden = true;
-    eventList.hidden = false;
+    
 }
 
 
@@ -807,12 +807,10 @@ function initializeApp() {
     showLoading();
 
     setTimeout(() => {
-
+         const filteredEvents = getFilteredEvents();
         hideLoading();
 
-        renderEvents(
-            getFilteredEvents()
-        );
+        renderEvents(filteredEvents);
 
     }, 500);
 }

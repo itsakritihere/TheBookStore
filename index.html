@@ -9,7 +9,7 @@
         content="Bookstore Events — discover author talks, readings, workshops, and community events."
     >
 
-    <title>Independent Bookstore Events</title>
+    <title>Biblioteca Bookstore Events</title>
 
     <link rel="stylesheet" href="css/style.css">
 </head>
@@ -26,7 +26,7 @@
                 <img src="assests/books.jpg" alt="logo" class="brand-logo">
 
                 <span class="brand-text">
-                    <strong>Independent</strong>
+                    <strong>Biblioteca</strong>
                     <span>Bookstore Events</span>
                 </span>
             </a>
@@ -58,7 +58,7 @@
                 <div class="hero-content">
 
                     <p class="eyebrow">
-                        INDEPENDENT BOOKSELLERS
+                        Biblioteca Bookstore
                     </p>
 
                     <h1>
@@ -184,7 +184,14 @@
                             >
                                 Author Talks
                             </button>
-
+                             <button
+                                type="button"
+                                class="filter-btn"
+                                data-category="book-launch"
+                                aria-pressed="false"
+                            >
+                                Book Launch
+                            </button>
                             <button
                                 type="button"
                                 class="filter-btn"
@@ -395,9 +402,12 @@
                                 <option value="workshop">
                                     Workshop
                                 </option>
+                                <option value="book-launch">
+                                    Book Launch
+                                </option>
 
                                 <option value="community">
-                                    Community
+                                    Community Readings
                                 </option>
                             </select>
 

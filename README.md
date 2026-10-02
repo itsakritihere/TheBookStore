@@ -10,8 +10,8 @@ config.js                   runtime settings (data URL, storage key, loading del
 css/style.css               styles
 script/utils.js             pure helpers (format, filter, validate) - unit tested
 script/script.js            DOM / UI logic
-assets/data/events.json     default events (data source)
-assets/images/              add books.jpg and bookstore1.jpg here
+assests/data/events.json     default events (data source)
+assests/images/              add books.jpg and bookstore1.jpg here
 tests/                      automated tests (node:test, no dependencies)
 docker/40-config.sh         generates config.js from env vars at container start
 Dockerfile                  nginx image
@@ -20,7 +20,7 @@ Dockerfile                  nginx image
 
 ## Run locally
 
-The page loads `assets/data/events.json` with `fetch`, so it must be served over HTTP
+The page loads `assests/data/events.json` with `fetch`, so it must be served over HTTP
 (opening `index.html` by double-click will not load the data).
 
 ```bash
@@ -35,7 +35,7 @@ All settings live in `config.js`:
 
 | Setting        | Env var         | Default                    | Purpose                                   |
 |----------------|-----------------|----------------------------|-------------------------------------------|
-| `dataUrl`      | `DATA_URL`      | `assets/data/events.json`  | Where events are loaded from (file or API)|
+| `dataUrl`      | `DATA_URL`      | `assests/data/events.json`  | Where events are loaded from (file or API)|
 | `storageKey`   | `STORAGE_KEY`   | `bookstore-events`         | localStorage key for saved events         |
 | `loadingDelay` | `LOADING_DELAY` | `400`                      | ms before the loading spinner appears     |
 
@@ -74,7 +74,7 @@ Open http://localhost:8080.
 
 ## Images
 
-Add these two files to `assets/images/`:
+Add these two files to `assests/images/`:
 
 - `books.jpg` - logo shown in the header
 - `bookstore1.jpg` - hero image

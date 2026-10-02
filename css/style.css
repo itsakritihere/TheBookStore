@@ -787,7 +787,59 @@ a {
     font-weight: 700;
 }
 
+/* ---------- Event card footer + delete button ---------- */
+.event-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
 
+.delete-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #b42318;
+    background: transparent;
+    border: 1px solid #b42318;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease, transform 0.1s ease;
+}
+
+.delete-btn:hover,
+.delete-btn:focus-visible {
+    color: #fff;
+    background: #b42318;
+}
+
+.delete-btn:focus-visible {
+    outline: 3px solid rgba(180, 35, 24, 0.35);
+    outline-offset: 2px;
+}
+
+.delete-btn:active {
+    transform: scale(0.96);
+}
+
+/* Fade-in for cards when the list re-renders */
+.event-card {
+    animation: cardIn 0.25s ease;
+}
+
+@keyframes cardIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .event-card { animation: none; }
+    .delete-btn { transition: none; }
+}
 
 .empty-state {
     min-height: 320px;

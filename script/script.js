@@ -68,7 +68,10 @@ async function fetchDefaultEvents() {
         throw new Error(`${CONFIG.dataUrl} did not contain a list of events`);
     }
 
-    return data;
+       return data.map((item, index) => ({
+        ...item,
+        id: item.id || `event-default-${index}`
+    }));
 }
 
 async function loadEvents() {
@@ -192,8 +195,17 @@ function createEventCard(event) {
 
         </div>
 
-        <div class="event-card-footer">
-            ${escapeHTML(getCategoryLabel(event.category))}
+               <div class="event-card-footer">
+            <span>${escapeHTML(getCategoryLabel(event.category))}</span>
+
+            <button
+                type="button"
+                class="delete-btn"
+                data-id="${escapeHTML(event.id)}"
+                aria-label="Delete event: ${escapeHTML(event.name)}"
+            >
+                <span aria-hidden="true">🗑</span> Delete
+            </button>
         </div>
     `;
 
@@ -224,7 +236,40 @@ function renderEvents(list) {
 function applyFilters() {
     renderEvents(filterEvents(events, currentCategory, currentSearch));
 }
+function deleteEvent(id) {
+    const target = events.find((item) => String(item.id) === String(id));
 
+    if (!target) {
+        return;
+    }
+
+    const confirmed = window.confirm(
+        `Delete "${target.name}"? This cannot be undone.`
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    events = events.filter((item) => String(item.id) !== String(id));
+
+    saveEvents();
+    applyFilters();
+
+    showToast("Event deleted.", "success");
+    trackInteraction(`Event deleted: ${target.name}`);
+}
+
+
+eventList.addEventListener("click", (event) => {
+    const button = event.target.closest(".delete-btn");
+
+    if (!button) {
+        return;
+    }
+
+    deleteEvent(button.dataset.id);
+});
 
 function setActiveFilterButton(category) {
     filterButtons.forEach((button) => {

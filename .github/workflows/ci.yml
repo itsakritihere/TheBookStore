@@ -1,0 +1,77 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run unit tests with coverage
+        run: npm run test:coverage
+
+  docker:
+    name: Build and smoke-test Docker image
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build -t biblioteca-events:ci .
+
+      - name: Run container with custom environment variables
+        run: |
+          docker run -d --name app -p 8080:80 \
+            -e STORAGE_KEY=ci-events \
+            -e LOADING_DELAY=250 \
+            biblioteca-events:ci
+          sleep 3
+
+      - name: Smoke test
+        run: |
+          curl -fsS http://localhost:8080/ | grep -q "Biblioteca Bookstore Events"
+          curl -fsS http://localhost:8080/assets/data/events.json | grep -q "event-1"
+          curl -fsS http://localhost:8080/config.js | grep -q 'storageKey: "ci-events"'
+          curl -fsS http://localhost:8080/config.js | grep -q 'loadingDelay: 250'
+
+      - name: Show container logs on failure
+        if: failure()
+        run: docker logs app
+
+  publish:
+    name: Publish image to GitHub Container Registry
+    runs-on: ubuntu-latest
+    needs: docker
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set lowercase image name
+        run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:latest
+            ${{ env.IMAGE }}:${{ github.sha }}

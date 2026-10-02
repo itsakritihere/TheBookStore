@@ -1,0 +1,8 @@
+[
+  { "id": "event-1", "name": "An Evening with Arundhati Roy", "category": "author-talk", "date": "2026-10-05", "time": "18:30", "host": "Arundhati Roy", "location": "Main Reading Room" },
+  { "id": "event-2", "name": "Sunday Poetry Reading", "category": "book-launch", "date": "2026-10-11", "time": "17:00", "host": "Rhea Kapoor", "location": "Poetry Corner" },
+  { "id": "event-3", "name": "Creative Writing Workshop", "category": "workshop", "date": "2026-10-18", "time": "11:00", "host": "Kabir Mehta", "location": "Workshop Studio" },
+  { "id": "event-4", "name": "Community Book Club", "category": "community", "date": "2026-10-22", "time": "16:00", "host": "Meera Sharma", "location": "Community Hall" },
+  { "id": "event-5", "name": "Meet the Author: The Himalayan Trail", "category": "author-talk", "date": "2026-10-28", "time": "18:00", "host": "Aarav Joshi", "location": "Main Reading Room" },
+  { "id": "event-6", "name": "Children's Storytelling Afternoon", "category": "reading", "date": "2026-11-02", "time": "15:30", "host": "Nisha Verma", "location": "Children's Section" }
+]

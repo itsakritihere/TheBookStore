@@ -1,60 +1,15 @@
 "use strict";
-const defaultEvents = [
+
+
+
+const CONFIG = Object.assign(
     {
-        id: "event-1",
-        name: "An Evening with Arundhati Roy",
-        category: "author-talk",
-        date: "2026-10-05",
-        time: "18:30",
-        host: "Arundhati Roy",
-        location: "Main Reading Room"
+        dataUrl: "assests/data/events.json",
+        storageKey: "bookstore-events",
+        loadingDelay: 400
     },
-    {
-        id: "event-2",
-        name: "Sunday Poetry Reading",
-        category: "book-launch",
-        date: "2026-10-11",
-        time: "17:00",
-        host: "Rhea Kapoor",
-        location: "Poetry Corner"
-    },
-    {
-        id: "event-3",
-        name: "Creative Writing Workshop",
-        category: "workshop",
-        date: "2026-10-18",
-        time: "11:00",
-        host: "Kabir Mehta",
-        location: "Workshop Studio"
-    },
-     {
-        id: "event-4",
-        name: "Community Book Club",
-        category: "community",
-        date: "2026-10-22",
-        time: "16:00",
-        host: "Meera Sharma",
-        location: "Community Hall"
-    },
-    {
-        id: "event-5",
-        name: "Meet the Author: The Himalayan Trail",
-        category: "author-talk",
-        date: "2026-10-28",
-        time: "18:00",
-        host: "Aarav Joshi",
-        location: "Main Reading Room"
-    },
-    {
-        id: "event-6",
-        name: "Children's Storytelling Afternoon",
-        category: "reading",
-        date: "2026-11-02",
-        time: "15:30",
-        host: "Nisha Verma",
-        location: "Children's Section"
-    }
-];
+    window.APP_CONFIG
+);
 
 
 const toast = document.getElementById("toast");
@@ -72,23 +27,12 @@ const formStatus = document.getElementById("formStatus");
 
 const connectionStatus = document.getElementById("connectionStatus");
 
-
-
 let events = [];
 let currentCategory = "all";
 let currentSearch = "";
+let toastTimer = null;
+let loadingTimer = null;
 
-
-
-function sanitizeText(value) {
-    const temp = document.createElement("div");
-
-    temp.textContent = String(value ?? "");
-
-    return temp.textContent
-        .replace(/[<>]/g, "")
-        .trim();
-}
 
 function showToast(message, type = "error") {
     toast.textContent = message;
@@ -97,53 +41,55 @@ function showToast(message, type = "error") {
     toast.classList.add(type);
     toast.classList.add("show");
 
-    setTimeout(() => {
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
         toast.classList.remove("show");
     }, 3000);
 }
 
-function readEvents() {
-    try {
-        const savedEvents = localStorage.getItem("bookstore-events");
-
-        if (!savedEvents) {
-            events = [...defaultEvents];
-            saveEvents();
-            return events;
-        }
-
-        const parsedEvents = JSON.parse(savedEvents);
-
-        events = Array.isArray(parsedEvents)
-            ? parsedEvents
-            : [...defaultEvents];
-
-    } catch (error) {
-        console.error("Could not load events:", error);
-
-        events = [...defaultEvents];
-    }
-
-    return events;
-}
-
-
-async function loadEvents() {
-    return readEvents();
-}
-
-
 function saveEvents() {
     try {
-        localStorage.setItem(
-            "bookstore-events",
-            JSON.stringify(events)
-        );
+        localStorage.setItem(CONFIG.storageKey, JSON.stringify(events));
     } catch (error) {
         console.error("Could not save events:", error);
     }
 }
 
+async function fetchDefaultEvents() {
+    const response = await fetch(CONFIG.dataUrl);
+
+    if (!response.ok) {
+        throw new Error(`Failed to load ${CONFIG.dataUrl} (${response.status})`);
+    }
+
+    const data = await response.json();
+
+    if (!Array.isArray(data)) {
+        throw new Error(`${CONFIG.dataUrl} did not contain a list of events`);
+    }
+
+    return data;
+}
+
+async function loadEvents() {
+    let saved = null;
+
+    try {
+        saved = parseStoredEvents(localStorage.getItem(CONFIG.storageKey));
+    } catch (error) {
+        console.error("Could not read saved events:", error);
+    }
+
+    if (saved) {
+        events = saved;
+        return events;
+    }
+
+    events = await fetchDefaultEvents();
+    saveEvents();
+
+    return events;
+}
 
 
 function trackInteraction(action) {
@@ -177,11 +123,6 @@ function updateConnectionStatus() {
 window.addEventListener("online", updateConnectionStatus);
 window.addEventListener("offline", updateConnectionStatus);
 
-let loadingTimer = null;
-
-// Spinner appears only if loading takes longer than this (ms)
-const LOADING_DELAY = 400;
-
 function showLoading() {
     loadingState.hidden = false;
     eventList.hidden = true;
@@ -193,106 +134,10 @@ function hideLoading() {
     loadingTimer = null;
     loadingState.hidden = true;
 }
-
 function showLoadingIfSlow() {
     clearTimeout(loadingTimer);
-    loadingTimer = setTimeout(showLoading, LOADING_DELAY);
+    loadingTimer = setTimeout(showLoading, CONFIG.loadingDelay);
 }
-
-
-
-function getCategoryLabel(category) {
-    const categories = {
-        "author-talk": "Author Talk",
-        "book-launch": "Book Launch",
-        "reading": "Reading",
-        "workshop": "Workshop",
-        "community": "Community"
-    };
-
-    return categories[category] || "Event";
-}
-
-
-function formatDate(dateString) {
-    const date = new Date(`${dateString}T00:00:00`);
-
-    if (Number.isNaN(date.getTime())) {
-        return {
-            day: "--",
-            month: "Unknown"
-        };
-    }
-
-    return {
-        day: date.toLocaleDateString("en-US", {
-            day: "2-digit"
-        }),
-
-        month: date.toLocaleDateString("en-US", {
-            month: "short"
-        })
-    };
-}
-
-
-function formatTime(timeString) {
-    if (!timeString) {
-        return "Time unavailable";
-    }
-
-    const [hours, minutes] = timeString.split(":");
-
-    const date = new Date();
-
-    date.setHours(
-        Number(hours),
-        Number(minutes),
-        0,
-        0
-    );
-
-    return date.toLocaleTimeString("en-US", {
-        hour: "numeric",
-        minute: "2-digit"
-    });
-}
-
-
-
-function escapeHTML(value) {
-    const div = document.createElement("div");
-
-    div.textContent = value;
-
-    return div.innerHTML;
-}
-
-
-function renderEvents(list) {
-    eventList.innerHTML = "";
-
-    if (list.length === 0) {
-        eventList.hidden = true;
-        emptyState.hidden = false;
-        return;
-    }
-
-    eventList.hidden = false;
-    emptyState.hidden = true;
-
-    const fragment = document.createDocumentFragment();
-
-    list.forEach((event) => {
-        const card = createEventCard(event);
-
-        fragment.appendChild(card);
-    });
-
-    eventList.appendChild(fragment);
-}
-
-
 
 function createEventCard(event) {
     const article = document.createElement("article");
@@ -355,107 +200,65 @@ function createEventCard(event) {
     return article;
 }
 
+function renderEvents(list) {
+    eventList.innerHTML = "";
+
+    if (list.length === 0) {
+        eventList.hidden = true;
+        emptyState.hidden = false;
+        return;
+    }
+
+    eventList.hidden = false;
+    emptyState.hidden = true;
+
+    const fragment = document.createDocumentFragment();
+
+    list.forEach((event) => {
+        fragment.appendChild(createEventCard(event));
+    });
+
+    eventList.appendChild(fragment);
+}
+
+function applyFilters() {
+    renderEvents(filterEvents(events, currentCategory, currentSearch));
+}
 
 
-function getFilteredEvents() {
-    const searchTerm = currentSearch
-        .toLowerCase()
-        .trim();
+function setActiveFilterButton(category) {
+    filterButtons.forEach((button) => {
+        const isActive = (button.dataset.category || "all") === category;
 
-    return events.filter((event) => {
-
-        const matchesCategory =
-            currentCategory === "all" ||
-            event.category === currentCategory;
-
-        const searchableText = [
-            event.name,
-            event.host,
-            event.location,
-            getCategoryLabel(event.category)
-        ]
-            .join(" ")
-            .toLowerCase();
-
-        const matchesSearch =
-            searchTerm === "" ||
-            searchableText.includes(searchTerm);
-
-        return matchesCategory && matchesSearch;
+        button.classList.toggle("active", isActive);
+        button.setAttribute("aria-pressed", String(isActive));
     });
 }
 
-
-
-function applyFilters() {
-    renderEvents(getFilteredEvents());
-}
-
-
 searchInput.addEventListener("input", (event) => {
-
     currentSearch = sanitizeText(event.target.value);
-
     applyFilters();
-
 });
 
-
 filterButtons.forEach((button) => {
-
     button.addEventListener("click", () => {
+        currentCategory = button.dataset.category || "all";
 
-        currentCategory =
-            button.dataset.category || "all";
+        setActiveFilterButton(currentCategory);
 
-        filterButtons.forEach((filterButton) => {
-
-            const isActive =
-                filterButton === button;
-
-            filterButton.classList.toggle(
-                "active",
-                isActive
-            );
-
-            filterButton.setAttribute(
-                "aria-pressed",
-                String(isActive)
-            );
-        });
-
-        trackInteraction(
-            `Category filter: ${currentCategory}`
-        );
+        trackInteraction(`Category filter: ${currentCategory}`);
 
         applyFilters();
     });
-
 });
 
-
 clearFiltersButton.addEventListener("click", () => {
-
     searchInput.value = "";
 
     currentSearch = "";
     currentCategory = "all";
 
-    filterButtons.forEach((button) => {
-
-        const isAll =
-            button.dataset.category === "all";
-
-        button.classList.toggle(
-            "active",
-            isAll
-        );
-
-        button.setAttribute(
-            "aria-pressed",
-            String(isAll)
-        );
-    });
+    setActiveFilterButton("all");
 
     trackInteraction("Filters cleared");
 
@@ -463,290 +266,95 @@ clearFiltersButton.addEventListener("click", () => {
 });
 
 
-
 const fields = {
     eventName: {
         input: document.getElementById("eventName"),
-        error: document.getElementById("eventNameError"),
-        label: "Event name"
+        error: document.getElementById("eventNameError")
     },
-
     eventCategory: {
         input: document.getElementById("eventCategory"),
-        error: document.getElementById("eventCategoryError"),
-        label: "Category"
+        error: document.getElementById("eventCategoryError")
     },
-
     eventDate: {
         input: document.getElementById("eventDate"),
-        error: document.getElementById("eventDateError"),
-        label: "Date"
+        error: document.getElementById("eventDateError")
     },
-
     eventTime: {
         input: document.getElementById("eventTime"),
-        error: document.getElementById("eventTimeError"),
-        label: "Time"
+        error: document.getElementById("eventTimeError")
     },
-
     eventHost: {
         input: document.getElementById("eventHost"),
-        error: document.getElementById("eventHostError"),
-        label: "Host / Author"
+        error: document.getElementById("eventHostError")
     },
-
     eventLocation: {
         input: document.getElementById("eventLocation"),
-        error: document.getElementById("eventLocationError"),
-        label: "Location"
+        error: document.getElementById("eventLocationError")
     }
 };
 
 function clearFieldError(field) {
-
-    field.input.setAttribute(
-        "aria-invalid",
-        "false"
-    );
-
+    field.input.setAttribute("aria-invalid", "false");
     field.error.textContent = "";
 }
 
 function showFieldError(field, message) {
-
-    field.input.setAttribute(
-        "aria-invalid",
-        "true"
-    );
-
+    field.input.setAttribute("aria-invalid", "true");
     field.error.textContent = message;
 }
 
 function validateForm() {
-
-    let isValid = true;
-
     Object.values(fields).forEach(clearFieldError);
 
-    const name = sanitizeText(
-        fields.eventName.input.value
-    );
+    const result = validateEventData({
+        name: fields.eventName.input.value,
+        category: fields.eventCategory.input.value,
+        date: fields.eventDate.input.value,
+        time: fields.eventTime.input.value,
+        host: fields.eventHost.input.value,
+        location: fields.eventLocation.input.value
+    });
 
-    const category =
-        fields.eventCategory.input.value;
+    Object.entries(result.errors).forEach(([key, message]) => {
+        showFieldError(fields[key], message);
+    });
 
-    const date =
-        fields.eventDate.input.value;
-
-    const time =
-        fields.eventTime.input.value;
-
-    const host = sanitizeText(
-        fields.eventHost.input.value
-    );
-
-    const location = sanitizeText(
-        fields.eventLocation.input.value
-    );
-
-
-
-
-    if (!name) {
-
-        showFieldError(
-            fields.eventName,
-            "Please enter an event name."
-        );
-
-        isValid = false;
-
-    } else if (name.length < 3) {
-
-        showFieldError(
-            fields.eventName,
-            "Event name must contain at least 3 characters."
-        );
-
-        isValid = false;
-    }
-
-
-  
-
-    if (!category) {
-
-        showFieldError(
-            fields.eventCategory,
-            "Please select a category."
-        );
-
-        isValid = false;
-    }
-
-
-
-
-    if (!date) {
-
-        showFieldError(
-            fields.eventDate,
-            "Please select an event date."
-        );
-
-        isValid = false;
-
-    } else {
-
-        const selectedDate =
-            new Date(`${date}T00:00:00`);
-
-        if (Number.isNaN(selectedDate.getTime())) {
-
-            showFieldError(
-                fields.eventDate,
-                "Please enter a valid date."
-            );
-
-            isValid = false;
-        }
-    }
-
-
-
-    if (!time) {
-
-        showFieldError(
-            fields.eventTime,
-            "Please select an event time."
-        );
-
-        isValid = false;
-    }
-
-
-
-    if (!host) {
-
-        showFieldError(
-            fields.eventHost,
-            "Please enter the host or author name."
-        );
-
-        isValid = false;
-
-    } else if (host.length < 2) {
-
-        showFieldError(
-            fields.eventHost,
-            "Host name must contain at least 2 characters."
-        );
-
-        isValid = false;
-    }
-
-
-    
-
-    if (!location) {
-
-        showFieldError(
-            fields.eventLocation,
-            "Please enter the event location."
-        );
-
-        isValid = false;
-
-    } else if (location.length < 2) {
-
-        showFieldError(
-            fields.eventLocation,
-            "Location must contain at least 2 characters."
-        );
-
-        isValid = false;
-    }
-
-
-    return {
-        isValid,
-        data: {
-            name,
-            category,
-            date,
-            time,
-            host,
-            location
-        }
-    };
+    return result;
 }
 
-
 eventForm.addEventListener("submit", async (event) => {
-
     event.preventDefault();
 
     formStatus.textContent = "";
 
-    const validation =
-        validateForm();
+    const validation = validateForm();
 
     if (!validation.isValid) {
+        formStatus.textContent = "Please correct the highlighted fields.";
+        formStatus.setAttribute("role", "alert");
 
-        formStatus.textContent =
-            "Please correct the highlighted fields.";
-
-        formStatus.setAttribute(
-            "role",
-            "alert"
-        );
-        showToast(
-        "Please fill in all required fields.",
-        "error"
-    );
+        showToast("Please fill in all required fields.", "error");
 
         trackInteraction("Invalid form submission");
 
         return;
     }
 
-
-  
-
     submitButton.disabled = true;
-    submitButton.setAttribute(
-        "aria-busy",
-        "true"
-    );
+    submitButton.setAttribute("aria-busy", "true");
+    submitButton.textContent = "Adding Event...";
 
-    submitButton.textContent =
-        "Adding Event...";
-        showToast(
-    "Event added successfully!",
-    "success"
-);
+    formStatus.textContent = "Saving event...";
 
-    formStatus.textContent =
-        "Saving event...";
-
-
+    // Simulated network delay (no backend yet)
     await new Promise((resolve) => {
         setTimeout(resolve, 800);
     });
 
-
-    const newEvent = {
+    events.push({
         id: `event-${Date.now()}`,
-        name: validation.data.name,
-        category: validation.data.category,
-        date: validation.data.date,
-        time: validation.data.time,
-        host: validation.data.host,
-        location: validation.data.location
-    };
-
-
-    events.push(newEvent);
+        ...validation.data
+    });
 
     saveEvents();
 
@@ -755,94 +363,55 @@ eventForm.addEventListener("submit", async (event) => {
     Object.values(fields).forEach(clearFieldError);
 
     formStatus.removeAttribute("role");
+    formStatus.textContent = "Event added successfully.";
 
-    formStatus.textContent =
-        "Event added successfully.";
-
-
-  
+    // Shown only after the event has actually been saved
+    showToast("Event added successfully!", "success");
 
     submitButton.disabled = false;
-
-    submitButton.setAttribute(
-        "aria-busy",
-        "false"
-    );
-
-    submitButton.textContent =
-        "Add Event";
-
-
+    submitButton.setAttribute("aria-busy", "false");
+    submitButton.textContent = "Add Event";
 
     currentSearch = "";
     currentCategory = "all";
 
     searchInput.value = "";
 
-    filterButtons.forEach((button) => {
-
-        const isAll =
-            button.dataset.category === "all";
-
-        button.classList.toggle(
-            "active",
-            isAll
-        );
-
-        button.setAttribute(
-            "aria-pressed",
-            String(isAll)
-        );
-    });
+    setActiveFilterButton("all");
 
     applyFilters();
 
     trackInteraction("Event added successfully");
 });
 
-
 Object.values(fields).forEach((field) => {
-
-    field.input.addEventListener("input", () => {
-
-        if (
-            field.input.getAttribute("aria-invalid") === "true"
-        ) {
+    const clearIfInvalid = () => {
+        if (field.input.getAttribute("aria-invalid") === "true") {
             clearFieldError(field);
         }
-    });
+    };
 
-    field.input.addEventListener("change", () => {
-
-        if (
-            field.input.getAttribute("aria-invalid") === "true"
-        ) {
-            clearFieldError(field);
-        }
-    });
+    field.input.addEventListener("input", clearIfInvalid);
+    field.input.addEventListener("change", clearIfInvalid);
 });
 
 
-
 async function initializeApp() {
-
     updateConnectionStatus();
 
-    
     showLoadingIfSlow();
 
     try {
         await loadEvents();
     } catch (error) {
         console.error("Could not load events:", error);
-        events = [...defaultEvents];
+        events = [];
+        showToast("Could not load events. Please try again later.", "error");
     }
 
     hideLoading();
 
-    renderEvents(getFilteredEvents());
+    applyFilters();
 }
-
-
 
 initializeApp();

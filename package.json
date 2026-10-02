@@ -1,0 +1,15 @@
+{
+  "name": "biblioteca-events",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Biblioteca Bookstore Events - a pure HTML/CSS/JS events page",
+  "scripts": {
+    "start": "npx --yes serve .",
+    "test": "node --test \"tests/*.test.js\"",
+    "test:coverage": "node --test --experimental-test-coverage \"tests/*.test.js\""
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "license": "MIT"
+}

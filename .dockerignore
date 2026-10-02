@@ -1,0 +1,11 @@
+node_modules
+tests
+coverage
+.git
+.github
+.gitignore
+.gitattributes
+package.json
+README.md
+Dockerfile
+.dockerignore
